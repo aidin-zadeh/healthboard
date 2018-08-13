@@ -14,6 +14,11 @@
 ## Report
 
 ## Requirements
+- flask         1.0.2
+- numpy         1.15.0
+- pandas        0.23.4
+- jupyter       1.0.0
+- nb_conda      2.2.1
 
 ## Directory Structure
 ```

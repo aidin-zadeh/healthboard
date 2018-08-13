@@ -1,12 +1,8 @@
  
-import os, inspect
 from flask import render_template, jsonify
 from healthboard import app
+from healthboard.data import data_df
 
-
-# get project root dir
-CURR_DIR = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
-ROOT_DIR = os.path.dirname(CURR_DIR)
 
 
 # home route
@@ -14,5 +10,11 @@ ROOT_DIR = os.path.dirname(CURR_DIR)
 @app.route('/')
 def home():
     return render_template('index.html')
+
+
+@app.route("/data")
+def get_data():
+    return jsonify(data_df.to_dict())
+
 
 
