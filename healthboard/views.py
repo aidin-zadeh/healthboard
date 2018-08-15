@@ -1,7 +1,7 @@
  
 from flask import render_template, jsonify
 from healthboard import app
-from healthboard.data import data_df
+from healthboard.data import data
 
 
 
@@ -14,7 +14,7 @@ def home():
 
 @app.route("/data")
 def get_data():
-    return jsonify(data_df.to_dict())
+    return jsonify(data)
 
 
 

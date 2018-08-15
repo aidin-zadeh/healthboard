@@ -1,3 +1,43 @@
+var data_labels = {
+    "state": "State",
+    "abbr": "State Code",
+    "poverty": "Poverty (%)",
+    "povertyMoe": "Media Poverty (%)",
+    "age": "Age (Mean)",
+    "ageMoe": "Age (Median)",
+    "income": "Household Income (Mean)",
+    "incomeMoe": "Household Income (Median)",
+    "healthcare": "Healthcare (%)",
+    "healthcareLow": "Low Healthcare (%)",
+    "healthcareHigh": "High Healthcare (%)",
+    "obesity": "Obesity (%)",
+    "obesityLow": "Low Obesity (%)",
+    "obesityHigh": "High Obesity (%)",
+    "smokes": "Somokes (%)",
+    "somkesLow": "Smokes Low (%)"
+};
+
+var diameter = 100;
+
+var margin = {
+    top: 10,
+    right: 10,
+    bottom: 90,
+    left: 90
+};
+
+var container_id = "scatter-plot",
+    svg_id = "svg-scatter";
+
+var label_font_size = 12,
+    radius = 12,
+    active_fill_color = "#000000",
+    inactive_fill_color = "#999999",
+    node_fill_color = "#86cbff",
+    node_fill_opacity = 0.8,
+    node_font_color = "#ffffff",
+    node_font_size = 8,
+    stroke_color = "#ffffff";
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -10,6 +50,12 @@ String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
 };
 
+function clear_container(element_id) {
+    let div = document.getElementById(element_id);
+    while(div.firstChild){
+        div.removeChild(div.firstChild);
+}
+}
 
 /**
  *
@@ -25,192 +71,258 @@ function create_select_options(form_id, options) {
     }
 }
 
-function render_pie_chart(element_id, values, labels, hover_text, title=title){
-    let data = [{
-        values: values,
-        labels: labels,
-        hovertext: hover_text,
-        hoverinfo: {bordercolor: 'black'},
-        type: 'pie'
-    }];
 
-    //   set up layout for plot
+function render_chart(json, xquery, yquery) {
 
-    let layout = {
+    // add graph canvas to the body of page
+    // let svg = d3.select(container_id)
+    //     .append("svg")
+    //         // add id
+    //         .attr("id", "svg-scatter")
+    //         // add responsive svg
+    //         .attr("preserveAspectRatio", "xMinYMin meet")
+    //         .attr("viewBox", "0 0 400 600")
+    //         // add class to make svg responsive
+    //         .classed("svg-content-responsive", true);
 
-        legend:{
-            orientation: "h" | "v",
-            // xanchor:"center",
-            // yanchor:"top",
-            // y:-0.3, // play with it
-            // x:0.5   // play with it
-        },
-        // width: 675,
-        margin:
-            {
-                top: 10,
-                bottom: 10,
-                right: 10,
-                left: 10
-            },
-        height: 500,
+    clear_container(container_id);
+    var svg = d3.select("#" + container_id)
+        .append("svg")
+        .attr("id", svg_id)
+        .attr("width", "100%")
+        .attr("height", "100%");
+
+    let svg_height = $("#" + svg_id).height(),
+        svg_width = $("#" + svg_id).width(),
+        chart_width = svg_width - margin.left - margin.right,
+        chart_height = svg_height - margin.top - margin.bottom;
+
+    // var svg = d3.select("#svg-scatter-plot"),
+    //     aspect =svg.width() /svg.height(),
+    //     container = svg.parent();
+
+    // console.log(json[0][xquery])
+    // console.log(d3.min(json, function (d) {return d[xquery]}));
+
+    var chart = svg.append("g")
+        .attr("id", "scatter-chart")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+    var xscale = d3.scaleLinear()
+            .range([0, chart_width])
+            .domain([
+                0.8 * d3.min([0., 0.8 * d3.min(json, function (d) {
+                    return +d[xquery]
+                })]),
+                1.2 * d3.max(json, function (d) {
+                    return +d[xquery]
+                })
+            ]),
+        bottom_axis = d3.axisBottom(xscale);
+
+    var yscale = d3.scaleLinear()
+            .range([chart_height, 0])
+            .domain([
+                0.8 * d3.min([0., 0.8 * d3.min(json, function (d) {
+                    return +d[yquery]
+                })]),
+                1.2 * d3.max(json, function (d) {
+                    return +d[yquery]
+                })
+            ]),
+        left_axis = d3.axisLeft(yscale);
+
+    // add axes
+    chart.append("g")
+        .attr("transform", `translate(0, ${chart_height})`)
+        .call(bottom_axis);
+    chart.append("g")
+        .attr("transform", `translate(0, ${0})`)
+        .call(left_axis);
+
+    // add x axis labels
+    chart.append("text")
+        .classed("xlabel", true)
+        .classed("active", xquery == "poverty")
+        .attr("id", "xlabel-1")
+        .attr("value", "poverty")
+        .attr("x", chart_width / 2)
+        .attr("y", chart_height + margin.bottom / 3 + 0)
+        .attr("fill", inactive_fill_color)
+        .attr("font-size", label_font_size)
+        .attr("dy", "0.35em")
+        .attr("text-anchor", "middle")
+        .text(data_labels["poverty"])
+        .on("click", xlabel_1_click_handler);
+
+    chart.append("text")
+        .classed("xlabel", true)
+        .classed("active", xquery == "age")
+        .attr("id", "xlabel-2")
+        .attr("x", chart_width / 2)
+        .attr("y", chart_height + margin.bottom / 3 + margin.bottom / 4)
+        .attr("fill", inactive_fill_color)
+        .attr("font-size", label_font_size)
+        .attr("dy", "0.35em")
+        .attr("text-anchor", "middle")
+        .attr("value", "age")
+        .text(data_labels["age"])
+        .on("click", xlabel_2_click_handler);
+
+    chart.append("text")
+        .classed("xlabel", true)
+        .classed("active", xquery == "incomeMoe")
+        .attr("id", "xlabel-3")
+        .attr("x", chart_width / 2)
+        .attr("y", chart_height + margin.bottom / 3 + 2 * margin.bottom / 4)
+        .attr("fill", inactive_fill_color)
+        .attr("font-size", label_font_size)
+        .attr("dy", "0.35em")
+        .attr("text-anchor", "middle")
+        .attr("value", "incomeMoe")
+        .text(data_labels["incomeMoe"])
+        .on("click", xlabel_3_click_handler);
+
+    // add y axis labels
+    chart.append("text")
+        .classed("ylabel", true)
+        .classed("active", yquery == "healthcareLow")
+        .attr("value", "healthcareLow")
+        .attr("id", "ylabel-1")
+        .attr("transform", `translate(${-margin.left / 3},${chart_height / 2})` + "rotate(-90) ")
+        .attr("fill", inactive_fill_color)
+        .attr("font-size", label_font_size)
+        .attr("dy", "0.35em")
+        .attr("text-anchor", "middle")
+        .text(data_labels["healthcareLow"])
+        .on("click", ylabel_1_click_handler);
+
+    chart.append("text")
+        .classed("ylabel", true)
+        .classed("active", yquery === "smokes")
+        .attr("id", "ylabel-2")
+        .attr("value", "smokes")
+        .attr("transform", `translate(${-margin.left / 3 - margin.left / 4},${chart_height / 2})` + "rotate(-90) ")
+        .attr("fill", inactive_fill_color)
+        .attr("font-size", label_font_size)
+        .attr("dy", "0.35em")
+        .attr("text-anchor", "middle")
+        .text(data_labels["smokes"])
+        .on("click", ylabel_2_click_handler);
+
+    chart.append("text")
+        .classed("ylabel", true)
+        .classed("active", yquery === "obesity")
+        .attr("id", "ylabel-3")
+        .attr("value", "obesity")
+        .attr("transform", `translate(${-margin.left / 3 - 2 * margin.left / 4},${chart_height / 2})` + "rotate(-90) ")
+        .attr("fill", inactive_fill_color)
+        .attr("font-size", label_font_size)
+        .attr("dy", "0.35em")
+        .attr("text-anchor", "middle")
+        .text(data_labels["obesity"])
+        .on("click", ylabel_3_click_handler);
+
+    document.getElementsByClassName("xlabel active")[0].setAttribute("fill", active_fill_color);
+    document.getElementsByClassName("ylabel active")[0].setAttribute("fill", active_fill_color);
+
+    return {
+        "xscale": xscale,
+        "yscale":yscale,
+        "xquery": xquery,
+        "yquery": yquery
     };
-    Plotly.newPlot(element_id, data, layout);
-    document.getElementById(element_id + "-header").innerHTML =
-        '<i class="fas fa-chart-area"></i>' + " " + title;
 }
 
-
-function render_bubble_plot(element_id, x, y, text, title) {
-
-    console.log("Response from render_bubble_plot: ","x = ", x, "y = ", y, "text = ", text);
-
-    var trace1 = {
-        x: x,
-        y: y,
-        mode: 'markers',
-        marker: {
-            colorscale: 'Earth',
-            color: x,
-            size: y
-        },
-        text: text,
-        type: "scatter"
-    };
-
-    var bubData = [trace1];
-
-    var bubLayout = {
-        hovermode: 'closest',
-        showlegend: false,
-        height: 600,
-        // width: 1200
-        margin:
-            {
-                top: 10,
-                bottom: 10,
-                right: 10,
-                left: 10
-            }
-
-    };
-    Plotly.newPlot(element_id, bubData, bubLayout);
-
-
-    document.getElementById(element_id + "-header").innerHTML =
-        '<i class="fas fa-chart-area"></i>' + " " +title;
+function error_handler(error) {
+    throw(error)
 }
 
-
-function render_metadata_table(table_id, data, title) {
-
-    let keys = Object.keys(data);
-    let $table = document.getElementById(table_id);
-
-    try {
-        // delete tbody
-        let nm_rows = $table.rows.length;
-        for (let i = 1; i < nm_rows; i++) {
-            $table.deleteRow(1);
-        }
-    } catch (e) {
-
-    }
-
-
-    let $tbody = $table.createTBody();
-    for (let i = 0; i < keys.length; i++) {
-        let $row = $tbody.insertRow();
-        let $elem = $row.insertCell(0)
-        $elem.innerHTML = keys[i].capitalize();
-        $elem = $row.insertCell(1);
-        $elem.innerHTML = data[keys[i]];
-    }
-
-    document.getElementById(table_id + "-header").innerHTML =
-        '<i class="fas fa-chart-area"></i>' + " " + title;
+function node_mouseover_handler(d, i) {
+    d3.select(this)
+        .transition()
+        .duration(500)
+        .attr("r", radius*1.3)
+        .attr("stroke-width", 3)
+        .attr("opacity", 1.0)
 }
 
-// render washing frequency gauge chart
-function render_gauge_chart(element_id, wash_freq, title) {
-    // determines level
-    let level = wash_freq*20;
+function node_mouseout_handler(d, i) {
+    d3.select(this)
+        .transition()
+        .duration(500)
+        .attr("r", radius)
+        .attr("stroke-width", 1)
+        .attr("opacity", node_fill_opacity);
 
-    // Trig to calc meter point
-    let degrees = 180 - level, radius = .5;
-    let radians = degrees * Math.PI / 180;
-    let x = radius * Math.cos(radians);
-    let y = radius * Math.sin(radians);
-
-    // Path: may have to change to create a better triangle
-    let main_path = 'M -.0 -0.025 L .0 0.025 L ',
-        path_x = String(x),
-        space = ' ',
-        path_y = String(y),
-        path_end = ' Z';
-    let path = main_path.concat(path_x, space, path_y, path_end);
-
-    let data = [{ type: 'scatter',
-        x: [0], y:[0],
-        marker: {size: 15, color:'850000'},
-        showlegend: false,
-        name: 'Number of Washes',
-        // text: washResponse,
-        hoverinfo: 'name'
-    },
-        { values: [50/5, 50/5, 50/5, 50/5, 50/5, 50],
-            rotation: 90,
-            text: ['8-9', '6-7', '4-5', '2-3', '0-1', " "],
-            textinfo: 'text',
-            textposition:'inside',
-            marker: {colors:['' +
-                '   rgba(14, 127, 0, .5)',
-                    'rgba(110, 154, 22, .5)',
-                    'rgba(170, 202, 42, .5)',
-                    'rgba(202, 209, 95, .5)',
-                    'rgba(210, 206, 145, .5)',
-                    'rgba(255, 255, 255, 0)']},
-            labels: ['8-9', '6-7', '4-5', '2-3', '0-1', " "],
-            hoverinfo: 'label',
-            hole: .5,
-            type: 'pie',
-            showlegend: false
-        }];
-
-    let layout = {
-        shapes:[{
-            type: 'path',
-            path: path,
-            fillcolor: '850000',
-            line: {
-                color: '850000'
-            }
-        }],
-        height: 500,
-        // width: 600,
-        margin: {
-            top: 50,
-            bottom: 10,
-            right: 10,
-            left: 10
-        },
-        xaxis: {zeroline:false, showticklabels:false,
-            showgrid: false, range: [-1, 1]},
-        yaxis: {zeroline:false, showticklabels:false,
-            showgrid: false, range: [-1, 1]}
-    };
-
-    Plotly.newPlot(element_id, data, layout);
-    document.getElementById(element_id + "-header").innerHTML =
-        '<i class="fas fa-chart-area"></i>' + " " + title;
 }
 
-//  render sample id input form
-d3.json("/names", function (error, response) {
+function xlabel_1_click_handler(d, i) {
+    d3.select(this)
+       .classed("active", true)
+        .attr("fill", active_fill_color);
+    d3.select("#xlabel-2")
+        .classed("active", false)
+        .attr("fill", inactive_fill_color);
+    d3.select("#xlabel-3")
+        .classed("active", false)
+        .attr("fill", inactive_fill_color);
+    let xquery = document.getElementsByClassName("xlabel active")[0].getAttribute("value");
+    render_scatter({"xquery": xquery, "yquery": null});
+}
 
-    if (error) return console.warn(error);
-    create_select_options("bb-form-input", response)
-});
+function xlabel_2_click_handler(d, i) {
+    d3.select(this)
+        .classed("active", true)
+    d3.select("#xlabel-1")
+        .classed("active", false)
+    d3.select("#xlabel-3")
+        .classed("active", false)
+    let xquery = document.getElementsByClassName("xlabel active")[0].getAttribute("value");
+    render_scatter({"xquery": xquery, "yquery": null});
+}
+
+function xlabel_3_click_handler(d, i) {
+    d3.select(this)
+        .classed("active", true)
+    d3.select("#xlabel-1")
+        .classed("active", false)
+    d3.select("#xlabel-2")
+        .classed("active", false)
+    let xquery = document.getElementsByClassName("xlabel active")[0].getAttribute("value");
+    render_scatter({"xquery": xquery, "yquery": null});
+}
+
+function ylabel_1_click_handler(d, i) {
+    d3.select(this)
+        .classed("active", true)
+    d3.select("#ylabel-2")
+        .classed("active", false)
+    d3.select("#ylabel-3")
+        .classed("active", false)
+    let yquery = document.getElementsByClassName("ylabel active")[0].getAttribute("value");
+    render_scatter({"xquery": null, "yquery": yquery});
+}
+function ylabel_2_click_handler(d, i) {
+    d3.select(this)
+        .classed("active", true)
+    d3.select("#ylabel-1")
+        .classed("active", false)
+    d3.select("#ylabel-3")
+        .classed("active", false)
+    let yquery = document.getElementsByClassName("ylabel active")[0].getAttribute("value");
+    render_scatter({"xquery": null, "yquery": yquery});
+}
+
+function ylabel_3_click_handler(d, i) {
+    d3.select(this)
+        .classed("active", true)
+    d3.select("#ylabel-1")
+        .classed("active", false)
+    d3.select("#ylabel-2")
+        .classed("active", false)
+   let yquery = document.getElementsByClassName("ylabel active")[0].getAttribute("value");
+   render_scatter({"xquery": null, "yquery": yquery});
+}
 
 
 

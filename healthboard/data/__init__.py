@@ -8,5 +8,9 @@ ROOT_DIR = os.path.dirname(CURR_DIR)
 
 
 fname = os.path.join(CURR_DIR, "raw", "data.csv")
-data_df = pd.read_csv(fname)
-data_df = data_df[data_df.columns[:-2]]
+data = pd.read_csv(fname)
+data = data[data.columns[:-2]]
+data = data.to_dict(orient="index")
+data =[data[key] for key in data.keys()]
+
+
