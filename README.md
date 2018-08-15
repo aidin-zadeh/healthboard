@@ -1,17 +1,18 @@
 
-# healthboard
+# Health Risk Dashboard
 
-```diff
-- **This rpository is currently under construction and is continuously filled with content.**
-```
+<p>This repository contains a Python project that implements a Flask based dashboard to explore different health risk factors in connection with different demographics.
+The current implementation implements the following objectives:</p>
 
-## Background
+- USe Python and Pandas to perform data exploration and data data retrieval.
+- Implement a Flask Web application.
+- Build interactive data visualization by pure D3.js.
+- Deploy the webapp to Heroku.
 
-## Methodology
+The current implementation of this project is [here](https://healthboard-heroku.herokuapp.com/).
 
 ## Data
-
-## Report
+[Data sampled from the U.S. Census Bureau and the Behavioral Risk Factor Surveillance System](https://github.com/aidinhass/healthboard/blob/master/healthboard/data/raw/data.csv)
 
 ## Requirements
 - flask         1.0.2
@@ -56,7 +57,8 @@ python run.py
 ## References
 
 ## To Do
-- [ ] TBA
+- [ ] Add meta statistic side card
+- [ ] Add table
 
 ## License
 MIT License
