@@ -1,3 +1,3 @@
 
-web: python run.py
+web: python -W ignore run.py
 
